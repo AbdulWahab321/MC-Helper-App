@@ -1,5 +1,4 @@
 import os
-import termcolor
 import sys
 
 BLUE = '\033[94m'
@@ -24,7 +23,7 @@ if "win" in sys.platform:
         os.system("pip install colorama")
         import colorama
     colorama.init()
-commands = ["save-place", "delete-place","get-coords","export-all", "show", "delete-data"]
+commands = ["save-place", "delete-place","get-coords","export-all", "show", "delete-data", "exit"]
 def _save_place(name,coords=()):
     already_exists = os.path.exists("data.dt")
     with open("data.dt","w" if not already_exists else "a") as f:
@@ -71,7 +70,8 @@ def _start():
     3) delete-place  --->  To delete one of your place and coordinates that you don't want anymore
     4) export-all    --->  To export all saved places to given file Path
     5) show          --->  To show all saved places on the console
-    6) delete-data   --->  To delete all saved places    
+    6) delete-data   --->  To delete all saved places  
+    7) exit          --->  To exit the program    
 """,BLUE)            
 def _delete_place(name):
     dt = ""
@@ -103,16 +103,25 @@ def colored(text,color):
     return color+text+'\033[0m'              
 def _export(filename):
     fl = None
-    dtfl = open("data.dt", "r")
-    data = dtfl.readlines()
-    dtfl.close()
-    if os.path.exists(filename):
+    if os.path.exists("data.dt"):
+        dtfl = open("data.dt", "r")
+        data = dtfl.readlines()
+        dtfl.close()
+        if not os.path.exists(os.path.dirname(filename)) or not os.path.isdir(os.path.dirname(filename)):
+            os.mkdir(os.path.dirname(filename))
+            os.makedirs(filename)
         for i in data:
             inname = i.split("name:")[1].split(";")[0]
             coords = i.split(f"name:{inname}")[1].split(";")[1].split("coords:")[1]
-            fl = open(filename, "a").write(f"Coordinates of {inname} is {coords}")
-        fl.close()  
-    cprint(f"Successfully exported All Places and Coordinates to file {filename}",GREEN)       
+            if os.path.exists(filename):
+                fl = open(filename, "a").write(f"Coordinates of {inname} is {coords}")
+            else:
+                fl = open(filename, "w").write(f"Coordinates of {inname} is {coords}")    
+        fl.close()
+              
+        cprint(f"Successfully exported All Places and Coordinates to file {filename}",GREEN)  
+    else:
+        cprint(f"Datas are deleted!",FAIL)         
 def print_similar(command):
     for i in commands:
         if command in i:
@@ -136,7 +145,13 @@ def print_similar(command):
                             print(f"{colored('Unknown command!',FAIL)}\n{colored('Did you mean: show',WARNING)}")
                             break
                         else:        
-                            return False
+                            if command in "ex":
+                                print(f"{colored('Unknown command!',FAIL)}\n{colored('Did you mean: exit or export-all',WARNING)}")    
+                            else:
+                                if command in "exit":
+                                    print(f"{colored('Unknown command!',FAIL)}\n{colored('Did you mean: exit',WARNING)}")
+                                else:    
+                                    return False
                  
 def _show():
     dtfl = open("data.dt", "r")
@@ -146,7 +161,7 @@ def _show():
         for i in data:
             inname = i.split("name:")[1].split(";")[0]
             coords = i.split(f"name:{inname}")[1].split(";")[1].split("coords:")[1]
-            cprint(f"Coordinates of {inname} is {coords}",GREEN)
+            cprint(f"{inname} : {coords}",GREEN)
     else:
         cprint("Datas are deleted!",FAIL)                    
 _start()   
@@ -173,7 +188,11 @@ while True:
             os.remove("data.dt")
             cprint("Successfully deleted Data",GREEN)
         else:
-            cprint("Data already deleted...",FAIL)     
+            cprint("Data already deleted...",FAIL)  
+    elif inp == "exit":
+        cprint("Exiting Program....",GREEN)
+        break
+        exit(0)           
     else:
         if inp.strip() == "-":
             cprint("Incomplete Command!",FAIL)
